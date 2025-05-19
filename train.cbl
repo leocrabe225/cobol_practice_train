@@ -40,29 +40,7 @@
       *la structure de sortie du fichier train2.dat
        FD TRAIN2.
        01 LIGNE-TRAIN2.
-       05 FILLER                       PIC X(12) VALUE "Train Type: ".
-           05 TRAIN2-OUT-TYPE  PIC X(26).
-           05 FILLER           PIC X(22) VALUE " | Departure Station: ".
-           05 TRAIN2-OUT-STATION-DEPART PIC X(18).
-           05 FILLER           PIC X(15) VALUE " | Train Time: ".
-           05 TRAIN2-OUT-TRAIN-TIME.
-               10 TRAIN2-OUT-TRAIN-TIME-HH PIC 9(02).
-               10 FILLER               PIC X(01) VALUE ":".
-               10 TRAIN2-OUT-TRAIN-TIME-MM PIC 9(02).
-               10 FILLER               PIC X(01) VALUE "h".
-           05 FILLER                   PIC X(13) VALUE " | Duration: ".
-           05 TRAIN2-OUT-TRAIN-NMBR-HEURES PIC 9(02).
-           05 FILLER                   PIC X(01) VALUE "h".
-           05 FILLER                   PIC X(10) VALUE " | Stops: ".
-           05 TRAIN2-OUT-TRAIN-STOPS          PIC 9(02).
-           05 FILLER                   PIC X(17) VALUE 
-              " | Arrival Time: ".
-           05 TRAIN2-OUT-TRAIN-END-TIME.
-               10 TRAIN2-OUT-TRAIN-END-TIME-HH PIC 9(02).
-               10 FILLER                PIC X(01) VALUE ":".
-               10 TRAIN2-OUT-TRAIN-END-TIME-MM PIC 9(02).
-               10 FILLER                PIC X(01) VALUE "h".
-
+           05 LIGNE-TRAIN2-CONTENU PIC X(150).
 
 
        WORKING-STORAGE SECTION.
