@@ -47,6 +47,9 @@
       *la taille du tableau
        01 WS-TBL-SIZE PIC 9(2) VALUE 46.
 
+      *variable pour calculer l'heure d'arrivée
+       01 WS-HEURE-ARRIVE-CALCUL PIC 9(2).
+
       *un output pour l'affichage 
        01 WS-SORTIE.
            05 FILLER           PIC X(12) VALUE "Train Type: ".
@@ -77,13 +80,18 @@
            88 WS-EOF-TRUE                VALUE 1.
            88 WS-EOF-FALSE               VALUE 0.
        PROCEDURE DIVISION.
+      *initialisation de l'index et du flag de fin de lecture
            MOVE 0 TO WS-IDX.
            SET WS-EOF-FALSE TO TRUE.
+      *on ouvre le fichier
            OPEN INPUT TRAIN.
+      *on lit le fichier
            PERFORM UNTIL WS-EOF-TRUE
                READ TRAIN
+      *si on a fini de lire le fichier, on sort de la boucle
                    AT END
                        SET WS-EOF-TRUE TO TRUE
+      *si on n'a pas fini de lire le fichier
                    NOT AT END
                        ADD 1 TO WS-IDX
                        MOVE TRAIN-PLANNING TO WS-LIGNE-TRAIN(WS-IDX)
@@ -94,9 +102,26 @@
                        END-PERFORM
                        SUBTRACT 1 FROM WS-IDX-2
                        MOVE WS-IDX-2 TO WS-TRAIN-STOPS(WS-IDX)
+      *on calcule l'heure d'arrivée et on l'enregistre dans le tableau
+      *on remet à 0 la valeur de WS-HEURE-ARRIVE-CALCUL pour éviter erreur de calcul
+                       MOVE 0 TO WS-HEURE-ARRIVE-CALCUL
+      *les minutes d'arrivé et de départ sont les mêmes
+                       MOVE WS-HEURE-DEPART-MM(WS-IDX) 
+                       TO WS-TRAIN-END-TIME-MM(WS-IDX)
+      *on récupère l'heure de départ et la durée
+                       ADD WS-HEURE-DEPART-HH(WS-IDX) 
+                       WS-DUREE-TRAJET(WS-IDX) 
+                       TO WS-HEURE-ARRIVE-CALCUL
+                       COMPUTE WS-HEURE-ARRIVE-CALCUL = FUNCTION MOD(
+                        WS-HEURE-ARRIVE-CALCUL 24)
+      *on vient de calculer l'heure d'arrivé, on l'enregistre
+                       MOVE WS-HEURE-ARRIVE-CALCUL 
+                       TO WS-TRAIN-END-TIME-HH(WS-IDX) 
                END-READ
            END-PERFORM.
+      *on ferme le fichier puisqu'on a fini de le lire
            CLOSE TRAIN.
+      *on enregistre la taille du tableau dans une variable prévu à cette effet
            MOVE WS-IDX TO WS-TBL-SIZE.
 
 
@@ -104,12 +129,17 @@
                MOVE WS-IDX TO WS-TRAIN-TO-WRITE
                PERFORM 0100-MOVE-TO-OUTPUT-BEGIN
                   THRU 0100-MOVE-TO-OUTPUT-END
+      *on affiche toutes les informations sur les trains
                DISPLAY WS-SORTIE
            END-PERFORM.
+
+      *on arrête le programme
            STOP RUN.
 
+      *paragraphe pour affichage dans le termnal
        0100-MOVE-TO-OUTPUT-BEGIN.
            EVALUATE TRUE
+      *on commence par enregistrer le type de train
                WHEN WS-TGV(WS-TRAIN-TO-WRITE)
                    MOVE "Train a Grande Vitesse"     TO WS-OUT-TYPE
                WHEN WS-CORAIL(WS-TRAIN-TO-WRITE)
@@ -117,16 +147,21 @@
                WHEN WS-TER(WS-TRAIN-TO-WRITE)
                    MOVE "Transport express regional" TO WS-OUT-TYPE
            END-EVALUATE.
+      *on enregistre la gare de départ
            MOVE WS-GARE-DEPART(WS-TRAIN-TO-WRITE) 
                TO WS-OUT-STATION-DEPART.
+      *on enregistre l'heure de départ(heure et minute) 
            MOVE WS-HEURE-DEPART-HH(WS-TRAIN-TO-WRITE)
                TO WS-OUT-TRAIN-TIME-HH.
            MOVE WS-HEURE-DEPART-MM(WS-TRAIN-TO-WRITE)
                TO WS-OUT-TRAIN-TIME-MM.
+      *on enregistre la durée du trajet
            MOVE WS-DUREE-TRAJET(WS-TRAIN-TO-WRITE)
                TO WS-OUT-TRAIN-NMBR-HEURES.
+      *on enregistre le nombre de stop
            MOVE WS-TRAIN-STOPS(WS-TRAIN-TO-WRITE)
                TO OUT-TRAIN-STOPS.
+      *on enregistre l'heure d'arrivée(heure et minute)
            MOVE WS-TRAIN-END-TIME-HH(WS-TRAIN-TO-WRITE)
                TO OUT-TRAIN-END-TIME-HH.
            MOVE WS-TRAIN-END-TIME-MM(WS-TRAIN-TO-WRITE)
