@@ -1,3 +1,10 @@
+      *ce programme prend un fichier en entrée qui contient les
+      *informations de départ et d'arrivée de plusieurs train.
+      *il affiche ces données de manière ordonée sur le terminal,
+      *avant d'écrire la même chose dans un fichier, en précisant
+      *le nombre de lignes écrites.
+      *suite à cela, il demande à l'utilisateur l'index d'un train
+      *pour écrire celui-ci dans un fichier à part avec une entête.
        IDENTIFICATION DIVISION.
        PROGRAM-ID. train.
        AUTHOR. lucas & Leocrabe225.
@@ -8,11 +15,13 @@
       *on associe le FD TRAIN au fichier train.dat
            SELECT TRAIN ASSIGN TO "train.dat"
               ORGANIZATION IS LINE SEQUENTIAL.
-              
+
+      *on associe le FD TRAIN-UNIQUE-OUTPUT au fichier train-unique.dat
            SELECT TRAIN-UNIQUE-OUTPUT
                ASSIGN TO "train-unique.dat"
                ORGANIZATION IS LINE SEQUENTIAL.
 
+      **on associe le FD TRAIN2 au fichier train2.dat
            SELECT TRAIN2 ASSIGN TO "train2.dat"
               ORGANIZATION IS LINE SEQUENTIAL.
 
@@ -23,10 +32,11 @@
        FD TRAIN.
        COPY traincpy.
 
-
+      *la structure de sortie du fichier train-unique.dat
        FD TRAIN-UNIQUE-OUTPUT.
        01 TRAIN-UNI-OUT-RECORD.
            05 TRAIN-UNI-OUT-LINE   PIC X(150).
+
       *la structure de sortie du fichier train2.dat
        FD TRAIN2.
        01 LIGNE-TRAIN2.
@@ -56,6 +66,8 @@
 
 
        WORKING-STORAGE SECTION.
+      *"paramètre" pour le paragraphe qui move un record du tableau
+      *dans la variable de sortie
        01 WS-TRAIN-TO-WRITE        PIC 9(03).
 
        01 WS-TBL-TRAIN.
@@ -184,8 +196,14 @@
 
       *après avoir écrit toutes les information concernant les trains,
       *il faut également écrire le nombre de ligne traité
-           MOVE FUNCTION CONCATENATE("NOMBRE de ligne traitée = ",
-           WS-TBL-SIZE) TO LIGNE-TRAIN2. 
+      *on remplit la ligne de sortie d'espaces
+           MOVE SPACES TO LIGNE-TRAIN2.
+      *puis on con(cat)ene du texte au nombre de lignes écrites
+           STRING "NOMBRE de ligne traitée = " WS-TBL-SIZE 
+               DELIMITED BY SIZE
+               INTO LIGNE-TRAIN2
+           END-STRING.
+      *on écrit la ligne dans le fichier
            WRITE LIGNE-TRAIN2.
 
       *on ferme le fichier train2.dat
@@ -270,6 +288,7 @@
            WRITE TRAIN-UNI-OUT-RECORD.
       *avant de fermer le fichier
            CLOSE TRAIN-UNIQUE-OUTPUT.
+      *puis on résume l'opération dans le terminal
            DISPLAY "The train record " WS-USER-INPUT " was successfully"
                " written to the file.".
        0400-INDEX-SEARCH-BONUS-END.
