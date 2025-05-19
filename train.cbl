@@ -31,7 +31,7 @@
                   15 WS-HEURE-DEPART-HH PIC 9(2).
                   15 WS-HEURE-DEPART-MM PIC 9(2).
               10 WS-DUREE-TRAJET PIC 9(2).
-              10 WS-NOMBRE-TRAJET PIC X(10).
+              10 WS-NOMBRE-TRAJET PIC X OCCURS 10 TIMES.
                   88 TRAIN-STOPS-HERE VALUE 'H'.
                   88 TRAIN-SERVICE    VALUE 'S'.
                   88 TRAIN-FRETE      VALUE 'F'.
@@ -42,6 +42,7 @@
 
       *l'index pour parcourir le tableau
        01 WS-IDX PIC 9(2).
+       01 WS-IDX-2 PIC 9(2).
 
       *la taille du tableau
        01 WS-TBL-SIZE PIC 9(2) VALUE 46.
@@ -86,6 +87,13 @@
                    NOT AT END
                        ADD 1 TO WS-IDX
                        MOVE TRAIN-PLANNING TO WS-LIGNE-TRAIN(WS-IDX)
+                       MOVE 1 TO WS-IDX-2
+                       PERFORM UNTIL WS-IDX-2 > 10 
+                       OR WS-NOMBRE-TRAJET(WS-IDX,WS-IDX-2) EQUAL SPACE
+                           ADD 1 TO WS-IDX-2
+                       END-PERFORM
+                       SUBTRACT 1 FROM WS-IDX-2
+                       MOVE WS-IDX-2 TO WS-TRAIN-STOPS(WS-IDX)
                END-READ
            END-PERFORM.
            CLOSE TRAIN.
