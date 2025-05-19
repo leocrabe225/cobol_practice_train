@@ -8,9 +8,14 @@
       *on associe le FD TRAIN au fichier train.dat
            SELECT TRAIN ASSIGN TO "train.dat"
               ORGANIZATION IS LINE SEQUENTIAL.
+              
            SELECT TRAIN-UNIQUE-OUTPUT
                ASSIGN TO "train-unique.dat"
                ORGANIZATION IS LINE SEQUENTIAL.
+
+           SELECT TRAIN2 ASSIGN TO "train2.dat"
+              ORGANIZATION IS LINE SEQUENTIAL.
+
        DATA DIVISION.
        
        FILE SECTION.
@@ -22,6 +27,34 @@
        FD TRAIN-UNIQUE-OUTPUT.
        01 TRAIN-UNI-OUT-RECORD.
            05 TRAIN-UNI-OUT-LINE   PIC X(150).
+      *la structure de sortie du fichier train2.dat
+       FD TRAIN2.
+       01 LIGNE-TRAIN2.
+       05 FILLER                       PIC X(12) VALUE "Train Type: ".
+           05 TRAIN2-OUT-TYPE  PIC X(26).
+           05 FILLER           PIC X(22) VALUE " | Departure Station: ".
+           05 TRAIN2-OUT-STATION-DEPART PIC X(18).
+           05 FILLER           PIC X(15) VALUE " | Train Time: ".
+           05 TRAIN2-OUT-TRAIN-TIME.
+               10 TRAIN2-OUT-TRAIN-TIME-HH PIC 9(02).
+               10 FILLER               PIC X(01) VALUE ":".
+               10 TRAIN2-OUT-TRAIN-TIME-MM PIC 9(02).
+               10 FILLER               PIC X(01) VALUE "h".
+           05 FILLER                   PIC X(13) VALUE " | Duration: ".
+           05 TRAIN2-OUT-TRAIN-NMBR-HEURES PIC 9(02).
+           05 FILLER                   PIC X(01) VALUE "h".
+           05 FILLER                   PIC X(10) VALUE " | Stops: ".
+           05 TRAIN2-OUT-TRAIN-STOPS          PIC 9(02).
+           05 FILLER                   PIC X(17) VALUE 
+              " | Arrival Time: ".
+           05 TRAIN2-OUT-TRAIN-END-TIME.
+               10 TRAIN2-OUT-TRAIN-END-TIME-HH PIC 9(02).
+               10 FILLER                PIC X(01) VALUE ":".
+               10 TRAIN2-OUT-TRAIN-END-TIME-MM PIC 9(02).
+               10 FILLER                PIC X(01) VALUE "h".
+
+
+
        WORKING-STORAGE SECTION.
        01 WS-TRAIN-TO-WRITE        PIC 9(03).
 
@@ -134,7 +167,9 @@
       * cet effet
            MOVE WS-IDX TO WS-TBL-SIZE.
 
-
+      *on ouvre le fichier train2.dat
+           OPEN OUTPUT TRAIN2.
+      
            PERFORM VARYING WS-IDX FROM 1 BY 1 UNTIL WS-IDX > WS-TBL-SIZE
                MOVE WS-IDX TO WS-TRAIN-TO-WRITE
                PERFORM 0100-MOVE-TO-OUTPUT-BEGIN
@@ -142,11 +177,25 @@
       *on affiche toutes les informations sur les trains
                DISPLAY WS-IDX SPACE WITH NO ADVANCING
                DISPLAY WS-SORTIE
+      *on pense à écrire également dans la sortie train2.dat
+               MOVE WS-SORTIE TO LIGNE-TRAIN2
+               WRITE LIGNE-TRAIN2
            END-PERFORM.
 
+      *après avoir écrit toutes les information concernant les trains,
+      *il faut également écrire le nombre de ligne traité
+           MOVE FUNCTION CONCATENATE("NOMBRE de ligne traitée = ",
+           WS-TBL-SIZE) TO LIGNE-TRAIN2. 
+           WRITE LIGNE-TRAIN2.
+
+      *on ferme le fichier train2.dat
+           CLOSE TRAIN2.
+      
       *on appelle le paragraphe du bonus
            PERFORM 0400-INDEX-SEARCH-BONUS-BEGIN
               THRU 0400-INDEX-SEARCH-BONUS-END.
+
+
       *on arrête le programme
            STOP RUN.
 
