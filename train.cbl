@@ -8,7 +8,9 @@
       *on associe le FD TRAIN au fichier train.dat
            SELECT TRAIN ASSIGN TO "train.dat"
               ORGANIZATION IS LINE SEQUENTIAL.
-
+           SELECT TRAIN-UNIQUE-OUTPUT
+               ASSIGN TO "train-unique.dat"
+               ORGANIZATION IS LINE SEQUENTIAL.
        DATA DIVISION.
        
        FILE SECTION.
@@ -16,6 +18,10 @@
        FD TRAIN.
        COPY traincpy.
 
+
+       FD TRAIN-UNIQUE-OUTPUT.
+       01 TRAIN-UNI-OUT-RECORD.
+           05 TRAIN-UNI-OUT-LINE   PIC X(150).
        WORKING-STORAGE SECTION.
        01 WS-TRAIN-TO-WRITE        PIC 9(03).
 
@@ -79,6 +85,8 @@
        01 WS-EOF               PIC 9(01).
            88 WS-EOF-TRUE                VALUE 1.
            88 WS-EOF-FALSE               VALUE 0.
+
+       01 WS-USER-INPUT        PIC 9(03).
        PROCEDURE DIVISION.
       *initialisation de l'index et du flag de fin de lecture
            MOVE 0 TO WS-IDX.
@@ -103,7 +111,8 @@
                        SUBTRACT 1 FROM WS-IDX-2
                        MOVE WS-IDX-2 TO WS-TRAIN-STOPS(WS-IDX)
       *on calcule l'heure d'arrivée et on l'enregistre dans le tableau
-      *on remet à 0 la valeur de WS-HEURE-ARRIVE-CALCUL pour éviter erreur de calcul
+      *on remet à 0 la valeur de WS-HEURE-ARRIVE-CALCUL pour éviter 
+      *erreur de calcul
                        MOVE 0 TO WS-HEURE-ARRIVE-CALCUL
       *les minutes d'arrivé et de départ sont les mêmes
                        MOVE WS-HEURE-DEPART-MM(WS-IDX) 
@@ -121,7 +130,8 @@
            END-PERFORM.
       *on ferme le fichier puisqu'on a fini de le lire
            CLOSE TRAIN.
-      *on enregistre la taille du tableau dans une variable prévu à cette effet
+      *on enregistre la taille du tableau dans une variable prévu à
+      * cet effet
            MOVE WS-IDX TO WS-TBL-SIZE.
 
 
@@ -130,9 +140,13 @@
                PERFORM 0100-MOVE-TO-OUTPUT-BEGIN
                   THRU 0100-MOVE-TO-OUTPUT-END
       *on affiche toutes les informations sur les trains
+               DISPLAY WS-IDX SPACE WITH NO ADVANCING
                DISPLAY WS-SORTIE
            END-PERFORM.
 
+      *on appelle le paragraphe du bonus
+           PERFORM 0400-INDEX-SEARCH-BONUS-BEGIN
+              THRU 0400-INDEX-SEARCH-BONUS-END.
       *on arrête le programme
            STOP RUN.
 
@@ -167,3 +181,46 @@
            MOVE WS-TRAIN-END-TIME-MM(WS-TRAIN-TO-WRITE)
                TO OUT-TRAIN-END-TIME-MM.
        0100-MOVE-TO-OUTPUT-END.
+
+      *paragraphe pour le bonus, qui demande à l'utilisateur l'index
+      *d'un record avant de l'écrire dans un fichier
+       0400-INDEX-SEARCH-BONUS-BEGIN.
+      *on demande l'entrée utilisateur avec un message
+           DISPLAY                  "Which train do you want to write to 
+      -            " train-unique.dat (1-" WS-TBL-SIZE ")? ".
+      *tant que l'utilisateur ne rentre pas une valeur valid , on lui
+      *redemande
+           PERFORM UNTIL WS-USER-INPUT > 0
+                   AND WS-USER-INPUT <= WS-TBL-SIZE
+               ACCEPT WS-USER-INPUT
+               IF WS-USER-INPUT = 0 OR WS-USER-INPUT > WS-TBL-SIZE
+                   DISPLAY WS-USER-INPUT 
+                       " is invalid. It should be between 1 and "
+                       WS-TBL-SIZE "."
+               END-IF
+           END-PERFORM.
+      *on appelle le paragrape d'écriture avec la valeur de
+      *l'utilisateur
+           MOVE WS-USER-INPUT TO WS-TRAIN-TO-WRITE.
+           PERFORM 0100-MOVE-TO-OUTPUT-BEGIN
+              THRU 0100-MOVE-TO-OUTPUT-END.
+      *on ouvre le fichier de sortie
+           OPEN OUTPUT TRAIN-UNIQUE-OUTPUT.
+      *on s'assure qu'il n'y a rien dans la ligne d'écriture du fichier
+           INITIALIZE TRAIN-UNI-OUT-RECORD.
+      *avec un string, on con(cat)ene un message avec le numéro du train
+           STRING "The user asked for train " WS-USER-INPUT " to be "
+               "written in this file." DELIMITED BY SIZE INTO 
+               TRAIN-UNI-OUT-LINE
+           END-STRING.
+      *on écrit le message dans le fichier
+           WRITE TRAIN-UNI-OUT-RECORD.
+      *on bouge la variable de sortie dans la ligne d'écriture
+           MOVE WS-SORTIE TO TRAIN-UNI-OUT-LINE.
+      *et on écrit
+           WRITE TRAIN-UNI-OUT-RECORD.
+      *avant de fermer le fichier
+           CLOSE TRAIN-UNIQUE-OUTPUT.
+           DISPLAY "The train record " WS-USER-INPUT " was successfully"
+               " written to the file.".
+       0400-INDEX-SEARCH-BONUS-END.
